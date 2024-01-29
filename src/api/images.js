@@ -10,6 +10,8 @@ const instance = axios.create({
   },
 });
 
-export const searchImages = (q, perPage = 15) => {
-  return instance.get(`?q=${q}&per_page=${perPage}`);
+export const searchImages = (q, perPage = 12, page = 1) => {
+  return instance.get(
+    `?q=${encodeURIComponent(q)}&per_page=${perPage}&page=${page}`
+  );
 };

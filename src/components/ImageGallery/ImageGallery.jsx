@@ -1,53 +1,124 @@
-import { Component } from 'react';
+import React, { Component } from 'react';
+import Searchbar from 'components/Searchbar/Searchbar';
 import ImageGalleryItem from 'components/ImageGalleryItem/ImageGalleryItem';
-import axios from 'axios';
+import Button from 'components/Button/Button';
+import Modal from 'components/Modal/Modal';
+import { searchImages } from 'api/images';
 
 import styles from './image-gallery.module.css';
 
 class ImageGallery extends Component {
   state = {
+    search: '',
     loading: false,
     images: [],
     error: null,
+    page: 1,
+    modalOpen: false,
+    imageDetails: {},
   };
 
   componentDidMount() {
-    this.setState({
-      loading: true,
-    });
-    const apiKey = '40978321-f1efcc4bfa3c901177745f4fe';
-
-    axios
-      .get(
-        `https://pixabay.com/api/?q=audi&page=1&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=12`
-      )
-      .then(({ data }) => {
-        this.setState({
-          loading: false,
-        });
-        const images = data.hits || [];
-        if (images.length) {
-          this.setState({
-            images,
-          });
-        }
-      })
-      .catch(error => {
-        this.setState({
-          loading: false,
-          error: error.message,
-        });
-      });
+    this.fetchImages();
   }
 
+  async componentDidUpdate(prevProps, prevState) {
+    const { search, page } = this.state;
+    if (search && (search !== prevState.search || page !== prevState.page)) {
+      this.fetchImages();
+    }
+  }
+
+  async fetchImages() {
+    const { search, page, images } = this.state;
+
+    try {
+      this.setState({
+        loading: true,
+      });
+      const { data } = await searchImages(search, 12, page);
+      const newImages = data?.hits || [];
+
+      const uniqueImagesSet = new Set([...images, ...newImages]);
+      const uniqueImages = Array.from(uniqueImagesSet);
+
+      this.setState({
+        images: uniqueImages,
+      });
+    } catch (error) {
+      this.setState({
+        error: error.message,
+      });
+    } finally {
+      this.setState({
+        loading: false,
+      });
+    }
+  }
+
+  loadMore = () => {
+    this.setState(
+      prevState => ({
+        page: prevState.page + 1,
+      }),
+      this.fetchImages
+    );
+  };
+
+  handleSearch = ({ search }) => {
+    this.setState({
+      search,
+      images: [],
+      page: 1,
+    });
+  };
+
+  showModal = largeImageURL => {
+    this.setState({
+      modalOpen: true,
+      imageDetails: {
+        largeImageURL,
+      },
+    });
+  };
+
+  closeModal = () => {
+    this.setState({
+      modalOpen: false,
+      imageDetails: {},
+    });
+  };
+
   render() {
-    const { loading, images, error } = this.state;
+    const { handleSearch, loadMore, showModal, closeModal } = this;
+    const { loading, images, error, modalOpen, imageDetails } = this.state;
+
+    const isImages = Boolean(images.length);
     return (
-      <div>
-        {loading && <p>Loading...</p>}
-        {error && <p className={styles.error}>{error}</p>}
-        {Boolean(images.length) && <ImageGalleryItem items={images} />}
-      </div>
+      <>
+        <header className={styles.searchbar}>
+          <Searchbar onSubmit={handleSearch} />
+        </header>
+        <div>
+          {loading && <div className={styles.loader}></div>}
+          {error && <p className={styles.error}>{error}</p>}
+          {isImages && (
+            <ImageGalleryItem showModal={showModal} items={images} />
+          )}
+          {isImages && (
+            <div className={styles.buttonContainer}>
+              <Button onClick={loadMore} type="button">
+                Load more
+              </Button>
+            </div>
+          )}
+        </div>
+        {modalOpen && (
+          <Modal close={closeModal}>
+            <img src={imageDetails.largeImageURL} alt="images" />
+          </Modal>
+        )}
+      </>
     );
   }
 }
