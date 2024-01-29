@@ -25,7 +25,9 @@ const ImageGalleryItem = ({ showModal, items }) => {
             alt="images"
             onLoad={() => handleImageLoad(id)}
           />
-          <a href={webformatURL} target="_blank" rel="noopener noreferrer"></a>
+          <a href={webformatURL} target="_blank" rel="noopener noreferrer">
+            {' '}
+          </a>
         </li>
       ))}
       {isAnyImageLoading && (
