@@ -58,7 +58,6 @@ class ImageGallery extends Component {
   };
 
   handleSearch = ({ search }) => {
-    console.log('Search value:', search);
     if (this.state.search === search) {
       return alert(`Ви вже переглядаєте ${search}`);
     }
