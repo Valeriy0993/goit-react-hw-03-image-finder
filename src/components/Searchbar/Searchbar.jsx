@@ -16,7 +16,8 @@ class Searchbar extends Component {
 
   handleSubmit = e => {
     e.preventDefault();
-    this.props.onSubmit({ ...this.state });
+    const lowercaseSearch = this.state.search.toLowerCase();
+    this.props.onSubmit({ search: lowercaseSearch });
     this.setState({
       search: '',
     });

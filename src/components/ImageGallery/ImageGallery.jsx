@@ -62,7 +62,7 @@ class ImageGallery extends Component {
       return alert(`Ви вже переглядаєте ${search}`);
     }
     this.setState({
-      search: search.toLowerCase(),
+      search,
       images: [],
       page: 1,
     });
