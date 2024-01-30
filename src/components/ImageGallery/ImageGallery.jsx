@@ -3,7 +3,6 @@ import Searchbar from 'components/Searchbar/Searchbar';
 import ImageGalleryItem from 'components/ImageGalleryItem/ImageGalleryItem';
 import Button from 'components/Button/Button';
 import Modal from 'components/Modal/Modal';
-import { searchImages } from 'api/images';
 
 import styles from './image-gallery.module.css';
 
@@ -19,55 +18,52 @@ class ImageGallery extends Component {
   };
 
   componentDidMount() {
-    this.fetchImages();
-  }
-
-  async componentDidUpdate(prevProps, prevState) {
-    const { search, page } = this.state;
-    if (search && (search !== prevState.search || page !== prevState.page)) {
+    if (this.state.search) {
       this.fetchImages();
     }
   }
 
-  async fetchImages() {
-    const { search, page, images } = this.state;
+  componentDidUpdate(prevProps, prevState) {
+    const API_KEY = '40978321-f1efcc4bfa3c901177745f4fe';
+    if (
+      prevState.search !== this.state.search ||
+      prevState.page !== this.state.page
+    ) {
+      this.setState({ loading: true });
+      fetch(
+        `https://pixabay.com/api/?q=${this.state.search}&page=${this.state.page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`
+      )
+        .then(response => response.json())
+        .then(image => {
+          if (!image.total) {
+            return alert('Нажаль по вашому запиту нічого не знайдено');
+          }
 
-    try {
-      this.setState({
-        loading: true,
-      });
-      const { data } = await searchImages(search, 12, page);
-      const newImages = data?.hits || [];
-
-      const uniqueImagesSet = new Set([...images, ...newImages]);
-      const uniqueImages = Array.from(uniqueImagesSet);
-
-      this.setState({
-        images: uniqueImages,
-      });
-    } catch (error) {
-      this.setState({
-        error: error.message,
-      });
-    } finally {
-      this.setState({
-        loading: false,
-      });
+          this.setState(prevState => ({
+            images: [...prevState.images, ...image.hits],
+            totalImages: image.total,
+          }));
+        })
+        .catch(error => error)
+        .finally(() => {
+          this.setState({ loading: false });
+        });
     }
   }
 
   loadMore = () => {
-    this.setState(
-      prevState => ({
-        page: prevState.page + 1,
-      }),
-      this.fetchImages
-    );
+    this.setState(prevState => ({
+      page: prevState.page + 1,
+    }));
   };
 
   handleSearch = ({ search }) => {
+    console.log('Search value:', search);
+    if (this.state.search === search) {
+      return alert(`Ви вже переглядаєте ${search}`);
+    }
     this.setState({
-      search,
+      search: search.toLowerCase(),
       images: [],
       page: 1,
     });
